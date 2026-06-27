@@ -1,0 +1,11 @@
+{
+  "name": "mattraby",
+  "owner": { "name": "Matt Raby" },
+  "plugins": [
+    {
+      "name": "vault-kit",
+      "source": "./plugins/vault-kit",
+      "description": "Scaffold and maintain OKF / LLM-wiki knowledge vaults (new-vault + ingest-source skills)."
+    }
+  ]
+}
