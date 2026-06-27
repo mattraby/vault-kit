@@ -37,10 +37,11 @@ vault/
     ├── domain/        # core concepts & glossary        (PLACEHOLDER — rename per PRD)
     ├── stakeholders/  # people & organizations          (PLACEHOLDER)
     ├── market/        # competitors & landscape         (PLACEHOLDER)
-    └── requirements/  # requirements & decisions        (PLACEHOLDER)
+    ├── requirements/  # requirements & decisions        (PLACEHOLDER)
+    └── architecture/  # technical approach & decisions  (PLACEHOLDER)
 ```
 
-The four `wiki/` categories are placeholders chosen before the PRD; rename/replace them once
+The five `wiki/` categories are placeholders chosen before the PRD; rename/replace them once
 the real research areas are known. A file's **path is its identity** — renaming a file means
 renaming a concept (Obsidian updates inbound links automatically; see Links).
 

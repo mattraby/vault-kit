@@ -4,7 +4,20 @@
 set -uo pipefail
 
 VAULT="${1:?usage: check-okf.sh <vault-dir>}"
+
+if [ ! -d "$VAULT" ]; then
+  echo "FAIL: $VAULT is not a directory"
+  exit 1
+fi
+
 fail=0
+
+# Require at least one .md file — an empty/non-vault dir is not conformant.
+md_count="$(find "$VAULT" -name '*.md' -type f | wc -l | tr -d ' ')"
+if [ "$md_count" -eq 0 ]; then
+  echo "FAIL: $VAULT contains no .md files (not a vault)"
+  fail=1
+fi
 
 # 1. Every non-reserved .md must have YAML frontmatter with a non-empty type:
 while IFS= read -r f; do
