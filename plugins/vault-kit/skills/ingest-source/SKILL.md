@@ -6,12 +6,12 @@ description: >-
   pull a document into the vault — a PowerPoint (.pptx), PDF, Markdown, text file, or
   web page/URL. Triggers on phrases like "ingest this deck", "add this PDF to the vault",
   "process the kickoff presentation", "capture this article", or "get this into the
-  knowledge base". It extracts the content (including PowerPoint speaker notes, via a
-  bundled stdlib script), archives the original, writes an OKF-conformant Source page,
-  drafts cross-linked wiki concept pages, updates index.md and log.md, then pauses for
-  human review before committing. Use it even when the user doesn't say the word
-  "ingest" — any request to turn an external document into vault knowledge should
+  knowledge base". Extracts the content (including PowerPoint speaker notes), archives
+  the original, writes an OKF-conformant Source page and cross-linked wiki pages, and
+  pauses for human review before committing. Use it even when the user doesn't say the
+  word "ingest" — any request to turn an external document into vault knowledge should
   trigger this skill.
+argument-hint: [path-or-url]
 ---
 
 # Ingest Source
@@ -57,8 +57,11 @@ unedited record. Keep the human's copy if they want one; the vault keeps its own
 
 ## Step 3 — Write the Source page
 
-Create `sources/<slug>.md` (`<slug>` = kebab-case of the title). Frontmatter `type: Source`,
-with `title`, `description`, `resource` (the URL, or the archived file path), `tags`, `timestamp`.
+Create `sources/<slug>.md` (`<slug>` = kebab-case of the title). If that file already exists,
+stop and check with the human — the source may already be ingested, and sources are immutable,
+so never overwrite one silently. Frontmatter `type: Source`, with `title`, `description`,
+`resource` (the URL, or the archived file path), `tags`, `timestamp` — take the timestamp from
+the real clock (`date -u +%Y-%m-%dT%H:%M:%SZ`), never from memory.
 Body: provenance (who/when/where), the key extracted points, a link to the archived original, and
 a `## Synthesized into` list of the wiki pages you create in Step 4.
 
@@ -76,9 +79,15 @@ Add new/changed pages to the relevant `index.md` catalogs (one-line summary + re
 Append one line per change to `log.md` under today's `## YYYY-MM-DD`, e.g.
 `- ingest | <Source title> → wrote wiki/…, updated …/index.md`.
 
-## Step 6 — Review checkpoint, then commit
+## Step 6 — Verify, then review checkpoint, then commit
 
-Stop and present a concise summary: the Source page, every wiki page created/updated (with a
+First run the bundled conformance check against the vault directory and fix any FAIL it reports:
+
+```bash
+bash "${CLAUDE_SKILL_DIR}/scripts/check-okf.sh" vault
+```
+
+Then stop and present a concise summary: the Source page, every wiki page created/updated (with a
 one-line "why"), and any index/log changes — ideally as a diff. **Wait for the human to confirm or
 correct** (rename concepts, fix interpretation, flag priorities). Only after approval, commit (or
 let the human commit). This checkpoint is the point of the whole skill — it keeps the human judging

@@ -35,12 +35,14 @@ worked-example Concept).
 ## Step 3 — Substitute the vault name into the two H1 titles
 
 ```bash
-NAME="<the vault name>"
-perl -0pi -e "s/^# Knowledge Vault — Schema & Operating Manual/# ${NAME} Vault — Schema & Operating Manual/m" vault/CLAUDE.md
-perl -0pi -e "s/^# Knowledge Vault — Index/# ${NAME} Vault — Index/m" vault/index.md
+export NAME="<the vault name>"
+perl -0pi -e 's/^# Knowledge Vault — Schema & Operating Manual/# $ENV{NAME} Vault — Schema & Operating Manual/m' vault/CLAUDE.md
+perl -0pi -e 's/^# Knowledge Vault — Index/# $ENV{NAME} Vault — Index/m' vault/index.md
 ```
 
-(If `perl` is unavailable, edit the first line of each file directly.)
+The name travels via the environment (`$ENV{NAME}`), so names containing `/`, `&`, quotes, or
+`$` cannot break the substitution. (If `perl` is unavailable, edit the first line of each file
+directly.)
 
 ## Step 4 — Seed the first log entry (today's date)
 
