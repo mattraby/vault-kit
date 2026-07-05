@@ -19,6 +19,7 @@ import sys
 RESERVED = {"index.md", "log.md", "CLAUDE.md", "AGENTS.md"}
 SKIP_DIRS = {".obsidian", ".bin", ".git"}
 LINK_RE = re.compile(r"!?\[[^\]]*\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
+WIKILINK_RE = re.compile(r"!?\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|[^\]]*)?\]\]")
 RECOMMENDED = ("title", "description", "timestamp")
 THIN_BODY_LINES = 5
 
@@ -59,13 +60,22 @@ def scan(vault):
     for path in md_files(vault):
         rel = os.path.relpath(path, vault)
         fm, body = parse_page(path)
+        text = strip_code("\n".join(body))
         links = []
-        for target in LINK_RE.findall(strip_code("\n".join(body))):
+        for target in LINK_RE.findall(text):
             if re.match(r"^[a-z][a-z0-9+.-]*:", target) or target.startswith("#"):
                 continue  # external URL or same-page anchor
             resolved = os.path.normpath(os.path.join(os.path.dirname(rel), target.split("#")[0]))
             links.append(resolved)
-        pages[rel] = {"frontmatter": fm, "body": body, "links": links}
+        wikilinks = [t.strip() for t in WIKILINK_RE.findall(text) if t.strip()]
+        pages[rel] = {"frontmatter": fm, "body": body, "links": links, "wikilinks": wikilinks}
+
+    # Wikilinks resolve by name: bare stem ("acme") or vault-relative path ("wiki/domain/acme").
+    by_name = {}
+    for rel in pages:
+        no_ext = rel[:-3]
+        for key in {os.path.basename(no_ext), no_ext}:
+            by_name.setdefault(key.lower(), []).append(rel)
 
     inbound = {rel: 0 for rel in pages}
     planned, missing_attachments = [], []
@@ -79,6 +89,12 @@ def scan(vault):
                 planned.append({"page": rel, "target": target})
             else:
                 missing_attachments.append({"page": rel, "target": target})
+        for name in page["wikilinks"]:
+            matches = by_name.get(name.lower().removesuffix(".md"), [])
+            for m in matches:  # count every candidate so ambiguity never fakes an orphan
+                inbound[m] += 1
+            if not matches:
+                planned.append({"page": rel, "target": f"[[{name}]]"})
 
     def reserved(rel):
         return os.path.basename(rel) in RESERVED

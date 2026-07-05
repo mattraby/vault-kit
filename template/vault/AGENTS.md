@@ -97,12 +97,22 @@ handle unknown types gracefully.
 
 ## Links
 
-- Use **relative markdown links** to other vault files: `[Customers](../stakeholders/acme.md)`.
-- **Do not use `[[wikilinks]]`.** They are not portable to non-Obsidian OKF consumers.
-  Obsidian is configured (`.obsidian/app.json`) to generate relative markdown links and to keep
-  them updated on rename, so authoring stays ergonomic and the graph view still works.
-- Always link to the `.md` file (path = identity). **Broken links are allowed** — they mark a
-  page that's worth writing but doesn't exist yet.
+Link style: markdown
+
+The line above declares this vault's link style. Every page follows it, and the conformance
+checker enforces it.
+
+- **markdown** (default, OKF-conformant) — relative markdown links to other vault files:
+  `[Customers](../stakeholders/acme.md)`. Portable to GitHub and any markdown tool, and
+  mechanically checkable as paths. Obsidian is configured (`.obsidian/app.json`) to generate
+  relative markdown links and keep them updated on rename, so authoring stays ergonomic and
+  the graph view still works. **Do not use `[[wikilinks]]`** in a markdown-style vault.
+- **wikilinks** (Obsidian-style) — `[[acme]]` or `[[acme|Customers]]`, resolved by file name.
+  They survive file moves made outside Obsidian (agent-driven refactors), at the price of OKF
+  conformance, GitHub rendering, and path-checkable links. Pages with non-unique names (like
+  the `index.md` files) still need path-qualified links.
+- Whichever the style: link to the `.md` file (its path/name is its identity), and **broken
+  links are allowed** — they mark a page that's worth writing but doesn't exist yet.
 
 ## Reserved files
 
@@ -151,6 +161,8 @@ frontmatter. Propose fixes; don't silently rewrite source-backed claims.
 ## OKF conformance (definition of done for any page)
 
 A page is conformant when: it has parseable YAML frontmatter with a non-empty `type`; links are
-relative markdown links to `.md` files; and reserved files follow the structures above. The
+relative markdown links to `.md` files (the default link style — a vault declared
+`Link style: wikilinks` deliberately trades this away for move-resilience); and reserved files
+follow the structures above. The
 whole `vault/` directory is a valid OKF bundle and can be rendered by any OKF consumer (e.g. the
 OKF static HTML visualizer) without translation.
