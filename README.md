@@ -36,7 +36,8 @@ npx degit mattraby/vault-kit/template my-project
   - `skills/new-vault/` — scaffolder; bundles the vault skeleton in `skeleton/`.
   - `skills/ingest-source/` — the ingest skill + `extract_pptx.py`.
 - `template/` — generated, committed export of the skeleton + ingest skill (for the clone path).
-- `scripts/check-okf.sh` — verifies a vault is OKF-conformant.
+- `scripts/check-okf.sh` — verifies a vault is OKF-conformant (wrapper; the canonical copy is
+  bundled inside the ingest-source skill so installed vaults can self-verify).
 - `scripts/build-template.sh` — regenerates `template/` from the plugin sources.
 
 ## Maintaining
