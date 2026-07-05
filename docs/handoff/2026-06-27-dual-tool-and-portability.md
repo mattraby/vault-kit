@@ -55,7 +55,7 @@ Guiding principle: **make the repo the single source of truth, and bridge Claude
 - AGENTS.md is the emerging cross-tool standard, so this is the right canonical regardless.
 
 ### 4b. Ingest as a tool-neutral workflow
-- The ingest workflow already lives in the schema doc, so once it's `AGENTS.md`, a Codex agent can follow the 6 steps.
+- The ingest workflow already lives in the schema doc, so once it's `AGENTS.md`, a Codex agent can follow its steps.
 - Move (or also place) the bundled `extract_pptx.py` to a tool-neutral path (e.g. `vault/.bin/extract_pptx.py`) and reference it from `AGENTS.md`, so any agent finds it (today it lives only under `.claude/skills/...`).
 - Keep the Claude Code `ingest-source` skill as a thin wrapper over that same workflow/script (preserves auto-trigger + `/vault-kit:ingest-source` ergonomics without duplicating the workflow).
 - Optional, lower priority: ship a Codex-native prompt; it's per-machine config, not repo-shared, so less valuable than the AGENTS.md route.
