@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # check-okf.sh — verify a directory is a conformant OKF / LLM-wiki vault bundle.
-# Usage: scripts/check-okf.sh <vault-dir>
+# Canonical copy: scripts/check-okf.sh. build-template.sh fans it out into the
+# skills and the vault skeleton's .bin/ — edit here, then re-run the build.
+# Usage: check-okf.sh <vault-dir>
 set -uo pipefail
 
 VAULT="${1:?usage: check-okf.sh <vault-dir>}"
@@ -20,31 +22,33 @@ if [ "$md_count" -eq 0 ]; then
 fi
 
 # 1. Every non-reserved .md must have YAML frontmatter with a non-empty type:
+#    (AGENTS.md and its CLAUDE.md bridge are schema config, exempt like index.md/log.md;
+#     head -n1 is CRLF-tolerant, and the frontmatter must actually close with ---)
 while IFS= read -r f; do
   case "$(basename "$f")" in
-    index.md|log.md|CLAUDE.md) continue ;;
+    index.md|log.md|CLAUDE.md|AGENTS.md) continue ;;
   esac
-  if [ "$(head -n1 "$f")" != "---" ]; then
+  if [ "$(head -n1 "$f" | tr -d '\r')" != "---" ]; then
     echo "FAIL: $f missing YAML frontmatter (no leading ---)"; fail=1; continue
   fi
-  if ! awk 'NR==1{next} /^---/{exit} /^type:[[:space:]]*[^[:space:]]/{found=1} END{exit !found}' "$f"; then
-    echo "FAIL: $f frontmatter has no non-empty 'type:'"; fail=1
+  if ! awk 'NR==1{next} /^---[[:space:]]*$/{closed=1; exit} /^type:[[:space:]]*[^[:space:]]/{found=1} END{exit !(found && closed)}' "$f"; then
+    echo "FAIL: $f frontmatter has no non-empty 'type:' or never closes with ---"; fail=1
   fi
 done < <(find "$VAULT" -name '*.md' -type f)
 
 # 2. Reserved index.md / log.md must NOT start with frontmatter
 while IFS= read -r f; do
-  if [ "$(head -n1 "$f")" = "---" ]; then
+  if [ "$(head -n1 "$f" | tr -d '\r')" = "---" ]; then
     echo "FAIL: reserved $f must not have YAML frontmatter"; fail=1
   fi
 done < <(find "$VAULT" \( -name 'index.md' -o -name 'log.md' \) -type f)
 
-# 3. No [[wikilinks]] anywhere (CLAUDE.md quotes the rule, so exempt it)
+# 3. No [[wikilinks]] anywhere (the schema quotes the rule, so exempt it and the bridge)
 while IFS= read -r f; do
   if grep -Iq '\[\[' "$f"; then
     echo "FAIL: wikilinks ([[...]]) found in $f"; fail=1
   fi
-done < <(find "$VAULT" -name '*.md' -type f ! -name 'CLAUDE.md')
+done < <(find "$VAULT" -name '*.md' -type f ! -name 'CLAUDE.md' ! -name 'AGENTS.md')
 
 if [ "$fail" -eq 0 ]; then echo "OK: $VAULT is OKF-conformant"; fi
 exit "$fail"

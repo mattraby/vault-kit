@@ -2,7 +2,7 @@
 
 Raw, **immutable** source material. We read these but never edit their content; each page is a
 thin wrapper that records provenance and links to the original. Synthesis happens in the
-[Wiki](../wiki/index.md), not here. See the Ingest workflow in [CLAUDE.md](../CLAUDE.md#workflows).
+[Wiki](../wiki/index.md), not here. See the Ingest workflow in [AGENTS.md](../AGENTS.md#workflows).
 
 ## Catalog
 
