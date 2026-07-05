@@ -12,7 +12,9 @@ scripts live at `vault/.bin/` where any agent can run them.
 
 - **`/vault-kit:new-vault`** — scaffolds a conformant `vault/` (AGENTS.md schema + CLAUDE.md
   bridge, committed MEMORY.md, `.bin/` helper scripts, `sources/` + `wiki/` with placeholder
-  categories, worked examples, Obsidian config) into the current repo.
+  categories, worked examples, Obsidian config) into the current repo. Asks your link style
+  up front: markdown (default, OKF-conformant) or Obsidian wikilinks — the vault declares the
+  choice and the checker and lint scanner honor it.
 - **`/vault-kit:ingest-source`** — turns an external document (PPTX, DOCX, PDF, Markdown, URL)
   into cross-linked vault knowledge, with a human review checkpoint. Also auto-invokes on
   requests like "ingest this deck."

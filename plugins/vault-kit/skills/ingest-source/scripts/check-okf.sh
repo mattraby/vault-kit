@@ -43,12 +43,18 @@ while IFS= read -r f; do
   fi
 done < <(find "$VAULT" \( -name 'index.md' -o -name 'log.md' \) -type f)
 
-# 3. No [[wikilinks]] anywhere (the schema quotes the rule, so exempt it and the bridge)
-while IFS= read -r f; do
-  if grep -Iq '\[\[' "$f"; then
-    echo "FAIL: wikilinks ([[...]]) found in $f"; fail=1
-  fi
-done < <(find "$VAULT" -name '*.md' -type f ! -name 'CLAUDE.md' ! -name 'AGENTS.md')
+# 3. No [[wikilinks]] anywhere — but only in markdown-style vaults. A vault declares
+#    its style with a "Link style: wikilinks|markdown" line in AGENTS.md (or CLAUDE.md
+#    in older vaults); absent a declaration, markdown is assumed. The schema quotes the
+#    rule, so exempt it and the bridge.
+STYLE="$(grep -hEo '^Link style: (markdown|wikilinks)' "$VAULT/AGENTS.md" "$VAULT/CLAUDE.md" 2>/dev/null | head -n1 | awk '{print $3}')"
+if [ "${STYLE:-markdown}" = "markdown" ]; then
+  while IFS= read -r f; do
+    if grep -Iq '\[\[' "$f"; then
+      echo "FAIL: wikilinks ([[...]]) found in $f (vault link style is markdown)"; fail=1
+    fi
+  done < <(find "$VAULT" -name '*.md' -type f ! -name 'CLAUDE.md' ! -name 'AGENTS.md')
+fi
 
 if [ "$fail" -eq 0 ]; then echo "OK: $VAULT is OKF-conformant"; fi
 exit "$fail"

@@ -16,10 +16,14 @@ Create a fresh, OKF-conformant `vault/` in the current repository from the bundl
 `${CLAUDE_SKILL_DIR}/skeleton/`. The skeleton is itself a valid OKF bundle; you copy it, give it
 a name, and seed the log.
 
-## Step 1 — Name the vault and guard against overwrite
+## Step 1 — Name the vault, pick the link style, guard against overwrite
 
 - Determine the **vault name** from the user's request, or ask: "What should this vault be
   called?" (e.g. "Acme Research"). It titles the schema and root index.
+- Ask the **link style** (unless the user already said): **markdown** (default — portable,
+  OKF-conformant, renders on GitHub, links are checkable paths) or **wikilinks** (`[[...]]` —
+  survives file moves made outside Obsidian, best for Obsidian-heavy refactoring; trades away
+  OKF conformance and GitHub rendering). No preference means markdown.
 - If a `vault/` directory already exists here, STOP and ask whether to remove it or scaffold
   elsewhere. Never overwrite an existing vault.
 
@@ -47,13 +51,27 @@ The name travels via the environment (`$ENV{NAME}`), so names containing `/`, `&
 `$` cannot break the substitution. (If `perl` is unavailable, edit the first line of each file
 directly.)
 
-## Step 4 — Seed the first log entry (today's date)
+## Step 4 — Apply the link style (only if the user chose wikilinks)
+
+The skeleton is markdown-style. For a wikilinks vault, flip the declaration and the Obsidian
+link generator:
+
+```bash
+perl -0pi -e 's/^Link style: markdown$/Link style: wikilinks/m' vault/AGENTS.md
+perl -0pi -e 's/"useMarkdownLinks": true/"useMarkdownLinks": false/; s/"newLinkFormat": "relative"/"newLinkFormat": "shortest"/' vault/.obsidian/app.json
+```
+
+The conformance checker and lint scanner read the `Link style:` line, so no other change is
+needed. Leave the worked examples' markdown links as they are — both styles resolve in
+Obsidian, and the examples get deleted anyway.
+
+## Step 5 — Seed the first log entry (today's date)
 
 ```bash
 printf '\n## %s\n\n- init | Vault scaffolded per LLM-wiki + OKF v0.1\n' "$(date +%F)" >> vault/log.md
 ```
 
-## Step 5 — Tell the user what's next
+## Step 6 — Tell the user what's next
 
 - Open `vault/` in Obsidian — it's configured for relative markdown links (OKF-portable).
 - Read `vault/AGENTS.md` — the schema and workflows. Codex and other AGENTS.md-aware tools

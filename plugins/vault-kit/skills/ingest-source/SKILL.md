@@ -26,8 +26,9 @@ Everything you write must satisfy the vault's conventions. The essentials:
 - **Two content layers:** `sources/` is raw and **immutable**; `wiki/` is synthesized and owned.
 - **OKF frontmatter:** every non-reserved `.md` needs a non-empty `type`; also set `title`,
   `description`, `resource`, `tags`, `timestamp` (ISO 8601).
-- **Links:** relative markdown links between `.md` files (e.g. `[Acme](../stakeholders/acme.md)`).
-  **Never `[[wikilinks]]`** — they aren't portable to other OKF consumers.
+- **Links:** follow the vault's declared style — the `Link style:` line in `vault/AGENTS.md`.
+  `markdown` (the default): relative markdown links (e.g. `[Acme](../stakeholders/acme.md)`),
+  never `[[wikilinks]]`. `wikilinks`: `[[acme]]`-style, resolved by file name.
 - **Reserved files:** `index.md` (per-directory catalog, no frontmatter) and `log.md` (append-only).
 
 If `vault/AGENTS.md` and these notes ever disagree, `AGENTS.md` wins. (In older vaults the

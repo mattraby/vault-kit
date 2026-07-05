@@ -40,6 +40,9 @@ The report distinguishes severity for you:
 - **Thin pages** — near-empty; propose filling or merging them.
 - **Missing recommended frontmatter** and **oldest timestamps** — staleness candidates.
 
+The scanner reads both link syntaxes: markdown links resolve as paths, wikilinks by file name
+(honoring the vault's `Link style:` declaration is the checker's job in Step 1).
+
 ## Step 3 — Judgment passes (read the pages, don't just scan)
 
 - **Contradictions:** pages that disagree with each other or with their cited sources.
