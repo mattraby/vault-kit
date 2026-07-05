@@ -3,13 +3,11 @@ name: ingest-source
 description: >-
   Ingest an external source into a knowledge vault (an OKF / LLM-wiki
   bundle). Use whenever the user wants to add, ingest, capture, process, digest, or
-  pull a document into the vault — a PowerPoint (.pptx), PDF, Markdown, text file, or
-  web page/URL. Triggers on phrases like "ingest this deck", "add this PDF to the vault",
-  "process the kickoff presentation", "capture this article", or "get this into the
-  knowledge base". Extracts the content (including PowerPoint speaker notes), archives
-  the original, writes an OKF-conformant Source page and cross-linked wiki pages, and
-  pauses for human review before committing. Use it even when the user doesn't say the
-  word "ingest" — any request to turn an external document into vault knowledge should
+  pull a document into the vault — a PowerPoint (.pptx), Word (.docx), PDF, Markdown,
+  text file, or web page/URL. Triggers on phrases like "ingest this deck", "add this
+  PDF to the vault", "process the kickoff presentation", "capture this article", or
+  "get this into the knowledge base". Use it even when the user doesn't say the word
+  "ingest" — any request to turn an external document into vault knowledge should
   trigger this skill.
 argument-hint: [path-or-url]
 ---
@@ -17,11 +15,11 @@ argument-hint: [path-or-url]
 # Ingest Source
 
 Turn one external source into durable vault knowledge, following the **Ingest** workflow
-in `vault/CLAUDE.md`. The bargain: **you do extraction and synthesis bookkeeping; the human
+in `vault/AGENTS.md`. The bargain: **you do extraction and synthesis bookkeeping; the human
 judges meaning.** So go all the way to a drafted synthesis, then *stop and show your work*
 before committing — interpretation the human hasn't seen should never land silently.
 
-## The vault contract (read `vault/CLAUDE.md` first)
+## The vault contract (read `vault/AGENTS.md` first)
 
 Everything you write must satisfy the vault's conventions. The essentials:
 
@@ -32,7 +30,9 @@ Everything you write must satisfy the vault's conventions. The essentials:
   **Never `[[wikilinks]]`** — they aren't portable to other OKF consumers.
 - **Reserved files:** `index.md` (per-directory catalog, no frontmatter) and `log.md` (append-only).
 
-If `vault/CLAUDE.md` and these notes ever disagree, `CLAUDE.md` wins.
+If `vault/AGENTS.md` and these notes ever disagree, `AGENTS.md` wins. (In older vaults the
+schema is `vault/CLAUDE.md`; in current ones `CLAUDE.md` is a one-line bridge that imports
+`AGENTS.md`.)
 
 ## Step 1 — Identify the source and extract
 
@@ -45,7 +45,7 @@ Route by type. The goal is clean text plus, where it matters, the visuals.
 | **Markdown / text** | `Read` the file directly. |
 | **Web page / URL** | Use the `defuddle` skill if the `defuddle` CLI is installed; otherwise `WebFetch`. |
 | **Image / screenshot** | `Read` the file directly. |
-| **Word `.docx`** | Not yet bundled — unzip and read `word/document.xml` text, or ask the user to export a PDF. |
+| **Word** `.docx` | Run `${CLAUDE_SKILL_DIR}/scripts/extract_docx.py FILE.docx` → Markdown of headings, paragraphs, lists, and tables plus metadata. If the media inventory reports vector media, ask for a PDF export for the visuals. |
 
 Skim the extracted content and tell the human the gist before writing pages — a sentence or two
 confirms you understood it and gives them a chance to redirect.
@@ -93,16 +93,19 @@ correct** (rename concepts, fix interpretation, flag priorities). Only after app
 let the human commit). This checkpoint is the point of the whole skill — it keeps the human judging
 meaning while you handle the mechanics.
 
-## Bundled script
+## Bundled scripts
 
-`${CLAUDE_SKILL_DIR}/scripts/extract_pptx.py` — stdlib only (no installs):
+Both are stdlib only (no installs), and both also live at `vault/.bin/` in scaffolded vaults
+so non-Claude agents can use them:
 
 ```
 python3 ${CLAUDE_SKILL_DIR}/scripts/extract_pptx.py DECK.pptx              # Markdown: metadata + per-slide text + notes
-python3 ${CLAUDE_SKILL_DIR}/scripts/extract_pptx.py DECK.pptx --json       # structured JSON
-python3 ${CLAUDE_SKILL_DIR}/scripts/extract_pptx.py DECK.pptx --media-dir /tmp/deck-media   # also extract raster images
+python3 ${CLAUDE_SKILL_DIR}/scripts/extract_docx.py FILE.docx              # Markdown: metadata + headings/paragraphs/lists/tables
+# both accept --json (structured output) and --media-dir DIR (extract raster images)
 ```
 
-It orders slides numerically, maps speaker notes via each slide's `.rels`, reads core metadata
-(title/author/dates), and reports a media inventory — flagging that vector media means you should
-read the companion PDF for visuals.
+`extract_pptx.py` orders slides numerically, maps speaker notes via each slide's `.rels`, reads
+core metadata (title/author/dates), and reports a media inventory — flagging that vector media
+means you should read the companion PDF for visuals. `extract_docx.py` walks the document body
+in order, mapping heading styles to `#`-headings, numbered paragraphs to bullets, and tables to
+Markdown tables.

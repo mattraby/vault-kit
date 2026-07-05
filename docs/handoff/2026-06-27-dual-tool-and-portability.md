@@ -1,5 +1,10 @@
 # Handoff: vault-kit v0.2 — dual-tool (Claude Code + Codex) and cross-machine portability
 
+**Status (2026-07-05): IMPLEMENTED** in v0.2 (PR #2). Decisions resolved: AGENTS.md route only
+(no Codex-native prompt); committed `vault/MEMORY.md`; built directly without a new spec.
+Helper scripts went to `vault/.bin/` (canonical copies in `scripts/`, fanned out by
+`build-template.sh`), and a `lint-vault` skill now covers the schema's Lint workflow.
+
 **Date:** 2026-06-27
 **Purpose:** Hand off an in-progress design discussion to a future LLM session. v0.1 of vault-kit is built, committed, and pushed (private repo). This document captures a proposed **v0.2** that makes a scaffolded vault work with BOTH Claude Code and Codex and be portable across machines. No v0.2 code has been written yet — only the design was discussed. Read this, confirm the open decisions with the human, then proceed.
 

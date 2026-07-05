@@ -1,7 +1,7 @@
 # Wiki
 
 Synthesized, cross-linked concept pages — the knowledge we own and maintain. One file per
-concept; the links between them form the graph. See [CLAUDE.md](../CLAUDE.md) for conventions.
+concept; the links between them form the graph. See [AGENTS.md](../AGENTS.md) for conventions.
 
 ## Categories
 

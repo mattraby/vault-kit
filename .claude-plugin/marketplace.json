@@ -5,7 +5,7 @@
     {
       "name": "vault-kit",
       "source": "./plugins/vault-kit",
-      "description": "Scaffold and maintain OKF / LLM-wiki knowledge vaults (new-vault + ingest-source skills)."
+      "description": "Scaffold and maintain OKF / LLM-wiki knowledge vaults (new-vault, ingest-source, and lint-vault skills; dual-tool AGENTS.md vaults)."
     }
   ]
 }

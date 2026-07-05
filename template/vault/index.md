@@ -1,8 +1,9 @@
 # Knowledge Vault — Index
 
 Root catalog for the knowledge base. Start here, then drill into a layer.
-See [CLAUDE.md](CLAUDE.md) for how this vault is structured and maintained, and
-[log.md](log.md) for the change history.
+See [AGENTS.md](AGENTS.md) for how this vault is structured and maintained,
+[log.md](log.md) for the change history, and [MEMORY.md](MEMORY.md) for durable
+project memory.
 
 ## Layers
 

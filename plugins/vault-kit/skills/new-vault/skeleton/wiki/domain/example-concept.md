@@ -35,7 +35,7 @@ files; each file's path is the concept's identity, and concepts cross-link into 
 
 ## Related
 
-- [Knowledge Vault schema](../../CLAUDE.md) — how this vault applies OKF.
+- [Knowledge Vault schema](../../AGENTS.md) — how this vault applies OKF.
 
 ## Citations
 
