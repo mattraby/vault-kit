@@ -15,7 +15,10 @@ conformance wins, because portability is a goal.
 
 1. **Sources** (`sources/`) — raw, **immutable** material: pasted articles, transcripts,
    exports, PDFs, screenshots. We read these but never edit their content. Each gets a thin
-   wrapper page (frontmatter + provenance + link to the original).
+   wrapper page (frontmatter + provenance + link to the original). Archived originals live
+   under `sources/attachments/` and are **assets, not pages** — whatever their extension
+   (including `.md`), they are exempt from the frontmatter and link rules, because the
+   wrapper page carries the metadata and immutability forbids editing them.
 2. **Wiki** (`wiki/`) — the knowledge we **own and maintain**: one markdown file per concept,
    cross-linked into a graph. This is where understanding accumulates.
 3. **Schema** (this file) — the conventions and workflows that keep layers 1–2 coherent.
@@ -155,14 +158,16 @@ Run the mechanical checks first: `bash .bin/check-okf.sh .` (conformance gate) a
 `python3 .bin/lint_scan.py .` (broken links, orphans, thin pages, missing recommended
 fields, oldest timestamps). Then scan for what needs judgment: contradictions between pages,
 stale claims, missing cross-links, and **OKF conformance** — every non-reserved `.md`
-(excluding `AGENTS.md`, `CLAUDE.md`, `index.md`, `log.md`) must have non-empty `type`
-frontmatter. Propose fixes; don't silently rewrite source-backed claims.
+(excluding `AGENTS.md`, `CLAUDE.md`, `index.md`, `log.md`, and archived originals under
+`sources/attachments/`) must have non-empty `type` frontmatter. Propose fixes; don't
+silently rewrite source-backed claims.
 
 ## OKF conformance (definition of done for any page)
 
 A page is conformant when: it has parseable YAML frontmatter with a non-empty `type`; links are
 relative markdown links to `.md` files (the default link style — a vault declared
 `Link style: wikilinks` deliberately trades this away for move-resilience); and reserved files
-follow the structures above. The
+follow the structures above. Archived originals under `sources/attachments/` are assets, not
+pages — the rules do not apply to them. The
 whole `vault/` directory is a valid OKF bundle and can be rendered by any OKF consumer (e.g. the
 OKF static HTML visualizer) without translation.

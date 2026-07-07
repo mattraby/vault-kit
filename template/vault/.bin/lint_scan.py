@@ -15,6 +15,7 @@ import json
 import os
 import re
 import sys
+from urllib.parse import unquote
 
 RESERVED = {"index.md", "log.md", "CLAUDE.md", "AGENTS.md"}
 SKIP_DIRS = {".obsidian", ".bin", ".git"}
@@ -30,6 +31,12 @@ def md_files(vault):
         for f in sorted(files):
             if f.endswith(".md"):
                 yield os.path.join(root, f)
+
+
+def is_attachment(rel):
+    """Archived originals under sources/attachments/ are assets, not pages —
+    the wrapper page carries the metadata, so they are not scanned as pages."""
+    return "/sources/attachments/" in "/" + rel.replace(os.sep, "/")
 
 
 def parse_page(path):
@@ -59,13 +66,16 @@ def scan(vault):
     pages = {}
     for path in md_files(vault):
         rel = os.path.relpath(path, vault)
+        if is_attachment(rel):
+            continue  # asset, not a page — links to it resolve via os.path.exists
         fm, body = parse_page(path)
         text = strip_code("\n".join(body))
         links = []
         for target in LINK_RE.findall(text):
             if re.match(r"^[a-z][a-z0-9+.-]*:", target) or target.startswith("#"):
                 continue  # external URL or same-page anchor
-            resolved = os.path.normpath(os.path.join(os.path.dirname(rel), target.split("#")[0]))
+            # %-decode after dropping the fragment: paths with spaces are written %20-encoded
+            resolved = os.path.normpath(os.path.join(os.path.dirname(rel), unquote(target.split("#")[0])))
             links.append(resolved)
         wikilinks = [t.strip() for t in WIKILINK_RE.findall(text) if t.strip()]
         pages[rel] = {"frontmatter": fm, "body": body, "links": links, "wikilinks": wikilinks}

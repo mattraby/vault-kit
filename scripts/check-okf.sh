@@ -23,8 +23,14 @@ fi
 
 # 1. Every non-reserved .md must have YAML frontmatter with a non-empty type:
 #    (AGENTS.md and its CLAUDE.md bridge are schema config, exempt like index.md/log.md;
-#     head -n1 is CRLF-tolerant, and the frontmatter must actually close with ---)
+#     archived originals under sources/attachments/ are assets, not pages — the wrapper
+#     page carries the metadata, and sources are immutable so we never edit them to add
+#     frontmatter; head -n1 is CRLF-tolerant, and the frontmatter must actually close
+#     with ---)
 while IFS= read -r f; do
+  case "$f" in
+    */sources/attachments/*) continue ;;
+  esac
   case "$(basename "$f")" in
     index.md|log.md|CLAUDE.md|AGENTS.md) continue ;;
   esac
@@ -46,14 +52,15 @@ done < <(find "$VAULT" \( -name 'index.md' -o -name 'log.md' \) -type f)
 # 3. No [[wikilinks]] anywhere — but only in markdown-style vaults. A vault declares
 #    its style with a "Link style: wikilinks|markdown" line in AGENTS.md (or CLAUDE.md
 #    in older vaults); absent a declaration, markdown is assumed. The schema quotes the
-#    rule, so exempt it and the bridge.
+#    rule, so exempt it and the bridge; raw originals under sources/attachments/ may
+#    contain [[...]] text we don't control, so they are exempt too.
 STYLE="$(grep -hEo '^Link style: (markdown|wikilinks)' "$VAULT/AGENTS.md" "$VAULT/CLAUDE.md" 2>/dev/null | head -n1 | awk '{print $3}')"
 if [ "${STYLE:-markdown}" = "markdown" ]; then
   while IFS= read -r f; do
     if grep -Iq '\[\[' "$f"; then
       echo "FAIL: wikilinks ([[...]]) found in $f (vault link style is markdown)"; fail=1
     fi
-  done < <(find "$VAULT" -name '*.md' -type f ! -name 'CLAUDE.md' ! -name 'AGENTS.md')
+  done < <(find "$VAULT" -name '*.md' -type f ! -name 'CLAUDE.md' ! -name 'AGENTS.md' ! -path '*/sources/attachments/*')
 fi
 
 if [ "$fail" -eq 0 ]; then echo "OK: $VAULT is OKF-conformant"; fi
