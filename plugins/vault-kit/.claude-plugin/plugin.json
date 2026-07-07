@@ -1,8 +1,10 @@
 {
   "name": "vault-kit",
   "description": "Scaffold and maintain OKF / LLM-wiki knowledge vaults: new-vault scaffolder, ingest-source, and lint-vault skills. Vaults are dual-tool (AGENTS.md schema + CLAUDE.md bridge).",
-  "version": "0.3.0",
-  "author": { "name": "Matt Raby" },
+  "version": "0.3.1",
+  "author": {
+    "name": "Matt Raby"
+  },
   "homepage": "https://github.com/mattraby/vault-kit",
   "repository": "https://github.com/mattraby/vault-kit",
   "license": "MIT"
