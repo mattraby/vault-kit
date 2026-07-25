@@ -15,25 +15,48 @@ argument-hint: [path-or-url]
 # Ingest Source
 
 Turn one external source into durable vault knowledge, following the **Ingest** workflow
-in `vault/AGENTS.md`. The bargain: **you do extraction and synthesis bookkeeping; the human
+in the vault's `AGENTS.md`. The bargain: **you do extraction and synthesis bookkeeping; the human
 judges meaning.** So go all the way to a drafted synthesis, then *stop and show your work*
 before committing — interpretation the human hasn't seen should never land silently.
 
-## The vault contract (read `vault/AGENTS.md` first)
+## Step 0 — Locate the vault and read its schema
+
+Vaults are named for their project (`acme-vault/`), not always `vault/`, so find the bundle
+rather than assuming a path:
+
+```bash
+bash "${CLAUDE_SKILL_DIR}/scripts/find-vault.sh" .
+```
+
+One match prints the path. No match exits 1 — offer the `new-vault` skill. Several exit 2 —
+ask the user which one. If the user named a vault explicitly, use theirs and skip this.
+
+Then read that vault's `AGENTS.md` (in older vaults the schema is `CLAUDE.md`; in current ones
+`CLAUDE.md` is a one-line bridge that imports `AGENTS.md`). Note two declarations at the top —
+they change where things go:
+
+| Declaration | Meaning |
+|---|---|
+| `Topics: single` (or absent) | `sources/`, `wiki/<category>/`, `outputs/` |
+| `Topics: multi` | `sources/<topic>/`, `wiki/<topic>/<category>/`, `outputs/<topic>/` |
+| `Link style: markdown` (or absent) | relative markdown links, e.g. `[Acme](../stakeholders/acme.md)` |
+| `Link style: wikilinks` | `[[acme]]`-style, resolved by file name |
+
+## The vault contract
 
 Everything you write must satisfy the vault's conventions. The essentials:
 
-- **Two content layers:** `sources/` is raw and **immutable**; `wiki/` is synthesized and owned.
+- **Four layers:** `sources/` is raw and **immutable**; `wiki/` is synthesized and owned;
+  `outputs/` holds long-form documents for readers outside the vault (not your concern here —
+  that's the Publish workflow); the schema governs all three.
 - **OKF frontmatter:** every non-reserved `.md` needs a non-empty `type`; also set `title`,
   `description`, `resource`, `tags`, `timestamp` (ISO 8601).
-- **Links:** follow the vault's declared style — the `Link style:` line in `vault/AGENTS.md`.
-  `markdown` (the default): relative markdown links (e.g. `[Acme](../stakeholders/acme.md)`),
-  never `[[wikilinks]]`. `wikilinks`: `[[acme]]`-style, resolved by file name.
+- **Links:** follow the vault's declared style, per the table above.
 - **Reserved files:** `index.md` (per-directory catalog, no frontmatter) and `log.md` (append-only).
+- **Attachments:** archived originals live in an `attachments/` folder and are assets, not
+  pages — no frontmatter, exempt from the link rules.
 
-If `vault/AGENTS.md` and these notes ever disagree, `AGENTS.md` wins. (In older vaults the
-schema is `vault/CLAUDE.md`; in current ones `CLAUDE.md` is a one-line bridge that imports
-`AGENTS.md`.)
+If the vault's `AGENTS.md` and these notes ever disagree, `AGENTS.md` wins.
 
 ## Step 1 — Identify the source and extract
 
@@ -51,41 +74,59 @@ Route by type. The goal is clean text plus, where it matters, the visuals.
 Skim the extracted content and tell the human the gist before writing pages — a sentence or two
 confirms you understood it and gives them a chance to redirect.
 
-## Step 2 — Archive the original (immutable)
+## Step 2 — Place it in a topic (multi-topic vaults only)
 
-Move the original into `sources/attachments/` (create it if needed). This is the permanent,
-unedited record. Keep the human's copy if they want one; the vault keeps its own.
+Decide which topic the source belongs to, and say which one you picked. **If it fits none of the
+existing topics, stop and say so** — a new topic is a structural change (three directories, four
+index updates, its own category set), not a filing decision the ingest can make on its own.
 
-## Step 3 — Write the Source page
+Single-topic vaults skip this step.
 
-Create `sources/<slug>.md` (`<slug>` = kebab-case of the title). If that file already exists,
-stop and check with the human — the source may already be ingested, and sources are immutable,
-so never overwrite one silently. Frontmatter `type: Source`, with `title`, `description`,
-`resource` (the URL, or the archived file path), `tags`, `timestamp` — take the timestamp from
-the real clock (`date -u +%Y-%m-%dT%H:%M:%SZ`), never from memory.
-Body: provenance (who/when/where), the key extracted points, a link to the archived original, and
-a `## Synthesized into` list of the wiki pages you create in Step 4.
+## Step 3 — Archive the original (immutable)
 
-## Step 4 — Synthesize into the wiki (the actual value)
+Move the original into the topic's attachments folder — `sources/attachments/` in a single-topic
+vault, `sources/<topic>/attachments/` in a multi-topic one. Create it if needed. This is the
+permanent, unedited record. Keep the human's copy if they want one; the vault keeps its own.
 
-Distill, don't transcribe. Create or update `wiki/` concept pages — one file per concept, with the
-right `type` (`Person`, `Organization`, `Requirement`, `Decision`, `Concept`, `Competitor`, …).
-Put each in the fitting category folder. **Cross-link**: source ↔ each concept, and concepts to each
-other. Prefer updating an existing page over duplicating one. Broken links to not-yet-written pages
-are fine — they mark future work.
+## Step 4 — Write the Source page
 
-## Step 5 — Update indexes and the log
+Create `sources/<slug>.md` (or `sources/<topic>/<slug>.md`), where `<slug>` is kebab-case of the
+title. If that file already exists, stop and check with the human — the source may already be
+ingested, and sources are immutable, so never overwrite one silently. Frontmatter `type: Source`,
+with `title`, `description`, `resource` (the URL, or the archived file path), `tags`,
+`timestamp` — take the timestamp from the real clock (`date -u +%Y-%m-%dT%H:%M:%SZ`), never from
+memory. Body: provenance (who/when/where), the key extracted points, a link to the archived
+original, and a `## Synthesized into` list of the wiki pages you create in Step 5.
+
+## Step 5 — Synthesize into the wiki (the actual value)
+
+Distill, don't transcribe. Create or update concept pages under `wiki/<category>/` (or
+`wiki/<topic>/<category>/`) — one file per concept, with the right `type` (`Person`,
+`Organization`, `Requirement`, `Decision`, `Concept`, `Competitor`, …). Put each in the fitting
+category folder; in a multi-topic vault a concept never sits loose in `wiki/<topic>/`.
+**Cross-link**: source ↔ each concept, and concepts to each other. Prefer updating an existing
+page over duplicating one. Broken links to not-yet-written pages are fine — they mark future work.
+
+Mind the depth: from `wiki/<topic>/<category>/`, a sibling category is `../`, another topic is
+`../../<other-topic>/`, and the vault root is `../../../`.
+
+## Step 6 — Update indexes and the log
 
 Add new/changed pages to the relevant `index.md` catalogs (one-line summary + relative link each).
-Append one line per change to `log.md` under today's `## YYYY-MM-DD`, e.g.
-`- ingest | <Source title> → wrote wiki/…, updated …/index.md`.
+Append one line per change to `log.md` under today's `## YYYY-MM-DD`. Multi-topic entries name
+the topic:
 
-## Step 6 — Verify, then review checkpoint, then commit
+```
+- ingest | <Source title> → wrote wiki/…, updated …/index.md
+- ingest | <topic> | <Source title> → wrote wiki/<topic>/…, updated that index
+```
+
+## Step 7 — Verify, then review checkpoint, then commit
 
 First run the bundled conformance check against the vault directory and fix any FAIL it reports:
 
 ```bash
-bash "${CLAUDE_SKILL_DIR}/scripts/check-okf.sh" vault
+bash "${CLAUDE_SKILL_DIR}/scripts/check-okf.sh" "$VAULT"
 ```
 
 Then stop and present a concise summary: the Source page, every wiki page created/updated (with a
@@ -96,13 +137,15 @@ meaning while you handle the mechanics.
 
 ## Bundled scripts
 
-Both are stdlib only (no installs), and both also live at `vault/.bin/` in scaffolded vaults
+All are stdlib only (no installs), and all also live at `.bin/` inside scaffolded vaults
 so non-Claude agents can use them:
 
 ```
-python3 ${CLAUDE_SKILL_DIR}/scripts/extract_pptx.py DECK.pptx              # Markdown: metadata + per-slide text + notes
-python3 ${CLAUDE_SKILL_DIR}/scripts/extract_docx.py FILE.docx              # Markdown: metadata + headings/paragraphs/lists/tables
-# both accept --json (structured output) and --media-dir DIR (extract raster images)
+bash    ${CLAUDE_SKILL_DIR}/scripts/find-vault.sh [DIR]      # locate the vault bundle
+python3 ${CLAUDE_SKILL_DIR}/scripts/extract_pptx.py DECK.pptx  # Markdown: metadata + per-slide text + notes
+python3 ${CLAUDE_SKILL_DIR}/scripts/extract_docx.py FILE.docx  # Markdown: metadata + headings/paragraphs/lists/tables
+bash    ${CLAUDE_SKILL_DIR}/scripts/check-okf.sh VAULT_DIR     # conformance gate
+# both extractors accept --json (structured output) and --media-dir DIR (extract raster images)
 ```
 
 `extract_pptx.py` orders slides numerically, maps speaker notes via each slide's `.rels`, reads

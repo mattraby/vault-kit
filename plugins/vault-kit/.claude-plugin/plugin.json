@@ -1,7 +1,7 @@
 {
   "name": "vault-kit",
-  "description": "Scaffold and maintain OKF / LLM-wiki knowledge vaults: new-vault scaffolder, ingest-source, and lint-vault skills. Vaults are dual-tool (AGENTS.md schema + CLAUDE.md bridge).",
-  "version": "0.3.1",
+  "description": "Scaffold and maintain OKF / LLM-wiki knowledge vaults: new-vault scaffolder, ingest-source, and lint-vault skills. Vaults are project-named, dual-tool (AGENTS.md schema + CLAUDE.md bridge), and carry four layers (sources, wiki, outputs, schema) in a single-topic or multi-topic layout.",
+  "version": "0.4.0",
   "author": {
     "name": "Matt Raby"
   },

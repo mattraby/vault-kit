@@ -11,22 +11,57 @@ knowledge base between us and the raw sources) and the **Open Knowledge Format (
 (that knowledge expressed as a portable markdown + YAML bundle). When they differ, OKF
 conformance wins, because portability is a goal.
 
-## The three layers
+## The four layers
 
 1. **Sources** (`sources/`) — raw, **immutable** material: pasted articles, transcripts,
    exports, PDFs, screenshots. We read these but never edit their content. Each gets a thin
    wrapper page (frontmatter + provenance + link to the original). Archived originals live
-   under `sources/attachments/` and are **assets, not pages** — whatever their extension
+   in an `attachments/` folder and are **assets, not pages** — whatever their extension
    (including `.md`), they are exempt from the frontmatter and link rules, because the
    wrapper page carries the metadata and immutability forbids editing them.
 2. **Wiki** (`wiki/`) — the knowledge we **own and maintain**: one markdown file per concept,
    cross-linked into a graph. This is where understanding accumulates.
-3. **Schema** (this file) — the conventions and workflows that keep layers 1–2 coherent.
+3. **Outputs** (`outputs/`) — long-form documents synthesized **from** the wiki and written for
+   a reader outside this vault: handoffs to another project's agents, engineering standards,
+   process descriptions. Whole documents with an intended audience, not atomic concepts.
+4. **Schema** (this file) — the conventions and workflows that keep layers 1–3 coherent.
+
+### Wiki or output?
+
+The distinction is **shape and audience**, not subject matter.
+
+| | `wiki/` | `outputs/` |
+|---|---|---|
+| Unit | one concept | one whole document |
+| Reader | us, and agents querying the vault | someone outside this vault |
+| Shape | short, atomic, heavily cross-linked | long-form, self-contained, readable start to finish |
+| Lifecycle | edited in place as understanding changes | versioned as drafts; supersede rather than patch |
+
+An output may be generated from another output — a machine-readable ruleset compiled from a
+prose document, say. The derived file declares its origin on its first body line:
+
+```
+DERIVED FROM: [Source Document](source-document.md)
+```
+
+Say the same in `description`, and **never hand-edit the generated file** — regenerate it. The
+lint scan reads that line and flags a derived file whose source has a newer timestamp.
 
 > [!important] Human curates, the wiki compounds
 > The human's job is to curate sources, direct analysis, ask good questions, and judge meaning.
 > The wiki's job is to summarize, cross-reference, stay consistent, and do the bookkeeping that
 > normally causes wikis to rot. Knowledge should compound, not scatter.
+
+## Layout
+
+Topics: single
+
+This vault holds **one research topic**, so each layer is organized directly by category. The
+line above declares that; the conformance checker and lint scanner read it. A vault covering
+several unrelated subjects can instead declare `Topics: multi` and partition every layer by
+topic (`wiki/<topic>/<category>/`, `sources/<topic>/`, `outputs/<topic>/`), giving each topic
+its own category set. Converting later means moving files and repointing links, so if a second
+subject is already on the horizon, start multi.
 
 ## Directory map
 
@@ -39,7 +74,11 @@ vault/
 ├── log.md             # append-only history (reserved)
 ├── .bin/              # tool-neutral helper scripts (extraction, conformance, lint)
 ├── sources/           # raw, immutable source material
-│   └── index.md
+│   ├── index.md
+│   └── attachments/   # archived originals (assets, not pages)
+├── outputs/           # long-form documents for readers outside the vault
+│   ├── index.md
+│   └── attachments/   # non-markdown companions (assets, not pages)
 └── wiki/              # synthesized concept pages (the graph)
     ├── index.md
     ├── domain/        # core concepts & glossary        (PLACEHOLDER — rename per PRD)
@@ -98,6 +137,9 @@ Rules:
 `Decision` · `Question` · `Source`. Pick a short, descriptive term; don't agonize — consumers
 handle unknown types gracefully.
 
+Types used in `outputs/`: `Standard` (descriptive engineering standards) · `Handoff` (a briefing
+addressed to a receiving agent and its human) · `Process` (a repeatable procedure).
+
 ## Links
 
 Link style: markdown
@@ -126,6 +168,10 @@ checker enforces it.
   meaningful change, newest date at the top. Example entry:
   `- ingest | Acme Q2 Report → wrote wiki/market/acme.md, updated market/index.md`.
 
+Every directory has an `index.md`, including `outputs/`. An output nobody indexed is an output
+nobody finds: outputs are entry points for outside readers rather than nodes in the graph, so
+the index is the only thing that makes them discoverable.
+
 ## Memory (durable, portable)
 
 `MEMORY.md` (frontmatter `type: Memory`) is the committed, tool-neutral memory for this
@@ -148,6 +194,16 @@ Helper scripts for these workflows live in `.bin/` (stdlib Python and bash — n
 4. **Index**: update the affected `index.md` files so the new/changed pages are discoverable.
 5. **Log**: append an `ingest` entry to `log.md`.
 
+### Publish (vault knowledge → external document)
+1. **Draft** into `outputs/` with `type`, `title`, `description`, `tags`, `timestamp` frontmatter.
+2. **Cite** the wiki pages and sources it rests on, as relative links. An output that cites
+   nothing is a signal the knowledge never landed in the wiki — put it there first.
+3. **Index**: add it to `outputs/index.md` under the right heading.
+4. **Log**: append a `publish` entry to `log.md`.
+
+Outputs are point-in-time. When one goes stale, supersede it with a new document and note which
+file replaced it, rather than silently rewriting a document someone may already be working from.
+
 ### Query (question → cited answer)
 1. Search `wiki/` (then `sources/` if needed).
 2. Synthesize an answer **with citations** as relative links to the pages used.
@@ -158,16 +214,23 @@ Run the mechanical checks first: `bash .bin/check-okf.sh .` (conformance gate) a
 `python3 .bin/lint_scan.py .` (broken links, orphans, thin pages, missing recommended
 fields, oldest timestamps). Then scan for what needs judgment: contradictions between pages,
 stale claims, missing cross-links, and **OKF conformance** — every non-reserved `.md`
-(excluding `AGENTS.md`, `CLAUDE.md`, `index.md`, `log.md`, and archived originals under
-`sources/attachments/`) must have non-empty `type` frontmatter. Propose fixes; don't
+(excluding `AGENTS.md`, `CLAUDE.md`, `index.md`, `log.md`, and archived originals in any
+`attachments/` directory) must have non-empty `type` frontmatter. Propose fixes; don't
 silently rewrite source-backed claims.
+
+**Orphan rules differ by layer.** A wiki page or source with no inbound links is a defect —
+index it or cross-link it. An output with none is normal, because outputs are entry points, not
+graph nodes; never "fix" one by inventing links to it. What outputs are held to instead: every
+output is listed in `outputs/index.md`, every output cites the wiki pages it rests on, and a
+generated output still matches the document it was derived from.
 
 ## OKF conformance (definition of done for any page)
 
 A page is conformant when: it has parseable YAML frontmatter with a non-empty `type`; links are
 relative markdown links to `.md` files (the default link style — a vault declared
 `Link style: wikilinks` deliberately trades this away for move-resilience); and reserved files
-follow the structures above. Archived originals under `sources/attachments/` are assets, not
-pages — the rules do not apply to them. The
-whole `vault/` directory is a valid OKF bundle and can be rendered by any OKF consumer (e.g. the
-OKF static HTML visualizer) without translation.
+follow the structures above. Archived originals in any `attachments/` directory are assets, not
+pages — the rules do not apply to them, whatever their extension. Pages in `outputs/` carry
+ordinary frontmatter like any other page, so the fourth layer changes nothing about
+conformance. The whole vault directory is a valid OKF bundle and can be rendered by any OKF
+consumer (e.g. the OKF static HTML visualizer) without translation.

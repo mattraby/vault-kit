@@ -23,13 +23,15 @@ fi
 
 # 1. Every non-reserved .md must have YAML frontmatter with a non-empty type:
 #    (AGENTS.md and its CLAUDE.md bridge are schema config, exempt like index.md/log.md;
-#     archived originals under sources/attachments/ are assets, not pages — the wrapper
+#     archived originals in any attachments/ directory are assets, not pages — the wrapper
 #     page carries the metadata, and sources are immutable so we never edit them to add
-#     frontmatter; head -n1 is CRLF-tolerant, and the frontmatter must actually close
-#     with ---)
+#     frontmatter. The glob is deliberately layout-agnostic: attachments/ sits under
+#     sources/ in a single-topic vault, under sources/<topic>/ in a multi-topic one, and
+#     outputs/ may carry its own. head -n1 is CRLF-tolerant, and the frontmatter must
+#     actually close with ---)
 while IFS= read -r f; do
   case "$f" in
-    */sources/attachments/*) continue ;;
+    */attachments/*) continue ;;
   esac
   case "$(basename "$f")" in
     index.md|log.md|CLAUDE.md|AGENTS.md) continue ;;
@@ -52,7 +54,7 @@ done < <(find "$VAULT" \( -name 'index.md' -o -name 'log.md' \) -type f)
 # 3. No [[wikilinks]] anywhere — but only in markdown-style vaults. A vault declares
 #    its style with a "Link style: wikilinks|markdown" line in AGENTS.md (or CLAUDE.md
 #    in older vaults); absent a declaration, markdown is assumed. The schema quotes the
-#    rule, so exempt it and the bridge; raw originals under sources/attachments/ may
+#    rule, so exempt it and the bridge; raw originals in any attachments/ directory may
 #    contain [[...]] text we don't control, so they are exempt too.
 STYLE="$(grep -hEo '^Link style: (markdown|wikilinks)' "$VAULT/AGENTS.md" "$VAULT/CLAUDE.md" 2>/dev/null | head -n1 | awk '{print $3}')"
 if [ "${STYLE:-markdown}" = "markdown" ]; then
@@ -60,7 +62,38 @@ if [ "${STYLE:-markdown}" = "markdown" ]; then
     if grep -Iq '\[\[' "$f"; then
       echo "FAIL: wikilinks ([[...]]) found in $f (vault link style is markdown)"; fail=1
     fi
-  done < <(find "$VAULT" -name '*.md' -type f ! -name 'CLAUDE.md' ! -name 'AGENTS.md' ! -path '*/sources/attachments/*')
+  done < <(find "$VAULT" -name '*.md' -type f ! -name 'CLAUDE.md' ! -name 'AGENTS.md' ! -path '*/attachments/*')
+fi
+
+# 4. Topic-mode structure. A vault declares its layout with a "Topics: single|multi" line
+#    in AGENTS.md (or CLAUDE.md in older vaults), read exactly like Link style above;
+#    absent a declaration, single is assumed, so every vault written before this existed
+#    keeps passing untouched. These checks run ONLY for multi — a single-topic vault must
+#    never be asked for topic directories.
+MODE="$(grep -hEo '^Topics: (single|multi)' "$VAULT/AGENTS.md" "$VAULT/CLAUDE.md" 2>/dev/null | head -n1 | awk '{print $2}')"
+if [ "${MODE:-single}" = "multi" ]; then
+  for layer in sources wiki outputs; do
+    [ -d "$VAULT/$layer" ] || continue
+
+    # 4a. Every page lives under a topic — the layer root holds only its index.
+    while IFS= read -r f; do
+      echo "FAIL: $f sits at the $layer/ root (multi-topic vaults file everything under a topic)"; fail=1
+    done < <(find "$VAULT/$layer" -maxdepth 1 -name '*.md' -type f ! -name 'index.md')
+
+    # 4b. Every topic directory is catalogued. attachments/ is an asset folder, not a topic.
+    while IFS= read -r d; do
+      case "$(basename "$d")" in attachments) continue ;; esac
+      [ -f "$d/index.md" ] || { echo "FAIL: topic directory $d has no index.md"; fail=1; }
+    done < <(find "$VAULT/$layer" -mindepth 1 -maxdepth 1 -type d)
+  done
+
+  # 4c. Concepts live in a category, never loose in wiki/<topic>/. (sources/<topic>/ and
+  #     outputs/<topic>/ hold their pages directly — only the wiki has a category level.)
+  if [ -d "$VAULT/wiki" ]; then
+    while IFS= read -r f; do
+      echo "FAIL: $f sits directly in a topic (wiki concepts belong in a category folder)"; fail=1
+    done < <(find "$VAULT/wiki" -mindepth 2 -maxdepth 2 -name '*.md' -type f ! -name 'index.md')
+  fi
 fi
 
 if [ "$fail" -eq 0 ]; then echo "OK: $VAULT is OKF-conformant"; fi

@@ -9,6 +9,7 @@ project memory.
 
 - [Sources](sources/index.md) — raw, immutable source material we ingest.
 - [Wiki](wiki/index.md) — synthesized, cross-linked concept pages (the graph).
+- [Outputs](outputs/index.md) — long-form documents written from the vault for readers outside it.
 
 ## Wiki categories
 
